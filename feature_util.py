@@ -59,8 +59,9 @@ def distanceToClosestCNV(df):
 
 
 def changePoint(df):
-    changepoint = df.groupby(['Chr', 'ID'])['logR'].diff().ungroup()
-    print(changepoint[:,0].tolist())
+    n_row = np.shape(df)[0]
+    changepoint = np.array(df.iloc[range(1, n_row), [15]].values - df.iloc[range(0, n_row - 1), [15]].values)
+    changepoint = np.insert(changepoint, 0, 0)
     return changepoint
 
 def allelicImbalance(row):
@@ -72,14 +73,10 @@ def allelicImbalance(row):
 def computeFeatures(df):
     with np.errstate(all="ignore"):
         df = distanceToClosestCNV(df)
-        df['logR'] = np.log2(((df['nAraw'] + df['nBraw']) / (df['Ploidy']+0.0001)))
+        df['logR'] = np.log2(((df['nAraw'] + df['nBraw']+0.00001) / (df['Ploidy']+0.0001)))
+        df['changepoint'] = changePoint(df)
         df['log10_segmentSize'] = np.log10(df['End'] - df['Start'] + 1)
         df['loh'] = df.apply(lambda row: label_loh(row), axis=1)
         df['allelicImbalance'] = df.apply(lambda row: allelicImbalance(row), axis=1)
-    #df['changePointCN'] = changePoint(df)
-    #print(df.head(5))
 
-    return df
-
-def changePoint(df):
     return df

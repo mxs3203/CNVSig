@@ -35,13 +35,13 @@ rule compute_features:
     input:
         rules.pickle_to_files.output
     output:
-        "data/output/compute_features/", "data/output/merged_features.pickle"
+        directory("data/output/compute_features/"), "data/output/merged_features.pickle"
     benchmark:
         "benchmarks/ascatfeatures.csv"
     run:
         frames = []
         os.mkdir(output[0])
-        for id in tqdm(glob.glob(input[0] + "/*")): # all sample folder
+        for id in (glob.glob(input[0] + "/*")): # all sample folder
             id_folder = "{}/{}/".format(output[0], id.split("/")[3])
             os.mkdir(id_folder)
             for chr_df in glob.glob(id + "/*.pickle"):
