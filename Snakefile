@@ -1,6 +1,7 @@
 import glob
 import os
 
+import pandas as pd
 from tqdm.asyncio import tqdm
 
 from feature_util import readPickle, savePickle, readAscatSavePickle, computeFeatures, makeFilesForEachSampleAndChr
@@ -34,10 +35,11 @@ rule compute_features:
     input:
         rules.pickle_to_files.output
     output:
-        "data/output/compute_features/"
+        "data/output/compute_features/", "data/output/merged_features.pickle"
     benchmark:
         "benchmarks/ascatfeatures.csv"
     run:
+        frames = []
         os.mkdir(output[0])
         for id in tqdm(glob.glob(input[0] + "/*")): # all sample folder
             id_folder = "{}/{}/".format(output[0], id.split("/")[3])
@@ -47,3 +49,6 @@ rule compute_features:
                 df = computeFeatures(df)
                 file_name = chr_df.split("/")[4]
                 savePickle(df, "{}/{}".format(id_folder, file_name))
+                frames.append(df)
+        all_features = pd.concat(frames)
+        savePickle(df,"data/output/merged_features.pickle")
