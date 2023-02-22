@@ -41,7 +41,7 @@ def label_loh(row):
    else:
        return 0
 
-def makeFilesForEachSampleAndChr(df,IDs, out_folder):
+def makeFilesForEachSampleAndChr(df, IDs, out_folder):
     if not os.path.exists(out_folder):
         os.mkdir(out_folder)
     for id in tqdm(IDs):
