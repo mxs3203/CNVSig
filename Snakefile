@@ -7,10 +7,13 @@ from tqdm.asyncio import tqdm
 from feature_util import readPickle, savePickle, readAscatSavePickle, computeFeatures, makeFilesForEachSampleAndChr
 
 ruleorder: csv_to_pickle_filter > pickle_to_files > compute_features
+IDs = pd.read_csv("data/input/ID_list.csv").ID.to_list()
+#IDs = IDs[0:5]
+
 
 rule all:
     input:
-        "data/output/compute_features/"
+        expand("data/output/compute_features/{sample}", sample=IDs)
 
 rule csv_to_pickle_filter:
     input:
@@ -24,30 +27,26 @@ rule pickle_to_files:
     input:
         rules.csv_to_pickle_filter.output
     output:
-        "data/output/pickle_to_files/"
+        directory(expand("data/output/pickle_to_files/{sample}/", sample=IDs))
+    params:
+        out_folder = "data/output/pickle_to_files"
     run:
         df = readPickle(input[0])
-        makeFilesForEachSampleAndChr(df, output[0])
-
+        makeFilesForEachSampleAndChr(df,IDs, params.out_folder)
 
 
 rule compute_features:
     input:
-        rules.pickle_to_files.output
+        directory("data/output/pickle_to_files/{sample}/")
     output:
-        directory("data/output/compute_features/"), "data/output/merged_features.pickle"
-    benchmark:
-        "benchmarks/ascatfeatures.csv"
+        directory("data/output/compute_features/{sample}/")
     run:
-        os.mkdir(output[0])
-        for id in tqdm(glob.glob(input[0] + "/*")): # all sample folder
-            id_folder = "{}/{}/".format(output[0], id.split("/")[3])
-            os.mkdir(id_folder)
-            for chr_df in glob.glob(id + "/*.pickle"):
-                df = readPickle(chr_df)
-                if not df.empty:
-                    df = computeFeatures(df)
-                    file_name = chr_df.split("/")[4]
-                    savePickle(df, "{}/{}".format(id_folder, file_name))
-                else:
-                    print("DF empty for {} {} ".format(id, chr_df))
+        os.mkdir(str(output))
+        for chr_df in glob.glob(str(input)+ "/*.pickle"):
+            df = readPickle(chr_df)
+            if not df.empty:
+                df = computeFeatures(df)
+                file_name = chr_df.split("/")[-1]
+                savePickle(df, "{}/{}".format(output,file_name))
+            else:
+                print("DF empty for {} {} ".format(id, chr_df))

@@ -41,15 +41,16 @@ def label_loh(row):
    else:
        return 0
 
-def makeFilesForEachSampleAndChr(df, out_folder):
-    os.mkdir(out_folder)
-    for id in tqdm(df.ID.unique()):
-        os.mkdir("{}/{}".format(out_folder, id))
-        for c in range(1,23,1):
+def makeFilesForEachSampleAndChr(df,IDs, out_folder):
+    if not os.path.exists(out_folder):
+        os.mkdir(out_folder)
+    for id in tqdm(IDs):
+        if not os.path.exists("{}/{}".format(out_folder, id)):
+            os.mkdir("{}/{}".format(out_folder, id))
+        for c in range(1, 23, 1):
             tmp_df = df.loc[df["ID"] == id]
             tmp_df = tmp_df.loc[df["Chr"] == c]
             savePickle(tmp_df, "{}/{}/{}.pickle".format(out_folder,id,c))
-
 
 def distanceToCentromere(row):
     location = hg19[hg19['Chr'] == row['Chr']]['location'].values[0]
@@ -89,8 +90,6 @@ def replicationTiming(row):
             return 0
         else:
             return rep_time_tmp['Scaled'].mean()
-
-
 def computeFeatures(df):
     with np.errstate(all="ignore"):
         df['replication_timing'] = df.apply(lambda row: replicationTiming(row), axis=1)
@@ -101,5 +100,4 @@ def computeFeatures(df):
         df['log10_segmentSize'] = np.log10(df['End'] - df['Start'] + 1)
         df['loh'] = df.apply(lambda row: label_loh(row), axis=1)
         df['allelicImbalance'] = df.apply(lambda row: allelicImbalance(row), axis=1)
-
     return df
