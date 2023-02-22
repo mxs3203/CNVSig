@@ -1,10 +1,14 @@
 import os
+import warnings
 
 from tqdm.asyncio import tqdm
 import numpy as np
 np.seterr(divide='ignore')
 import pandas as pd
 import pickle as pk
+
+hg19 = pd.read_csv("data/input/hg19.chrom.sizes.txt", sep=",")
+rep_time = pd.read_csv("data/input/Encode_replication_timing.tsv", sep="\t")
 
 def readAscatSavePickle(input, output):
     df = pd.read_csv(input, delimiter=",")
@@ -47,8 +51,12 @@ def makeFilesForEachSampleAndChr(df, out_folder):
             savePickle(tmp_df, "{}/{}/{}.pickle".format(out_folder,id,c))
 
 
-def computeDistance(row):
-    return row
+def distanceToCentromere(row):
+    location = hg19[hg19['Chr'] == row['Chr']]['location'].values[0]
+    if row['Start'] <= location: # long arm
+        return np.log10((location - row['End'] + 1))
+    else: #short arm
+        return np.log10((location - row['Start'] + 1))
 
 def distanceToClosestCNV(df):
     n_row = np.shape(df)[0]
@@ -70,8 +78,23 @@ def allelicImbalance(row):
     else:
         return 0
 
+def replicationTiming(row):
+    with warnings.catch_warnings():
+        warnings.simplefilter(action='ignore', category=UserWarning)
+        start,end = row['Start'], row['End']
+        chr = "chr{}".format(row['Chr'])
+        rep_time_tmp = rep_time[rep_time['Chromosome'] == chr]
+        rep_time_tmp = rep_time_tmp[rep_time['Position'].between(start, end)]
+        if np.shape(rep_time_tmp)[0] == 0:
+            return 0
+        else:
+            return rep_time_tmp['Scaled'].mean()
+
+
 def computeFeatures(df):
     with np.errstate(all="ignore"):
+        df['replication_timing'] = df.apply(lambda row: replicationTiming(row), axis=1)
+        df['log10_distToCentromere'] = df.apply(lambda row: distanceToCentromere(row), axis=1)
         df = distanceToClosestCNV(df)
         df['logR'] = np.log2(((df['nAraw'] + df['nBraw']+0.00001) / (df['Ploidy']+0.0001)))
         df['changepoint'] = changePoint(df)

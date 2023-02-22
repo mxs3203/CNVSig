@@ -39,16 +39,15 @@ rule compute_features:
     benchmark:
         "benchmarks/ascatfeatures.csv"
     run:
-        frames = []
         os.mkdir(output[0])
-        for id in (glob.glob(input[0] + "/*")): # all sample folder
+        for id in tqdm(glob.glob(input[0] + "/*")): # all sample folder
             id_folder = "{}/{}/".format(output[0], id.split("/")[3])
             os.mkdir(id_folder)
             for chr_df in glob.glob(id + "/*.pickle"):
                 df = readPickle(chr_df)
-                df = computeFeatures(df)
-                file_name = chr_df.split("/")[4]
-                savePickle(df, "{}/{}".format(id_folder, file_name))
-                frames.append(df)
-        all_features = pd.concat(frames)
-        savePickle(df,"data/output/merged_features.pickle")
+                if not df.empty:
+                    df = computeFeatures(df)
+                    file_name = chr_df.split("/")[4]
+                    savePickle(df, "{}/{}".format(id_folder, file_name))
+                else:
+                    print("DF empty for {} {} ".format(id, chr_df))
