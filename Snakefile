@@ -21,11 +21,13 @@ rule all:
     input: expand("data/output/compute_features/{sample}/", sample=IDs), "data/output/merged_features.pickle", "data/output/feature_quantiles.pickle", expand("data/output/make_long_images/{sample}.pickle", sample=IDs), expand("data/output/make_square_images/{sample}.pickle", sample=IDs)
 
 rule csv_to_pickle_filter:
+    priority: 1
     input: "data/input/hmf_ascat.csv"
     output: "data/output/csv_to_pickle_filter/hmf_ascat.obj"
     run: readAscatSavePickle(input[0],output[0])
 
 rule pickle_to_files:
+    priority: 1
     input: rules.csv_to_pickle_filter.output
     output: directory(expand("data/output/pickle_to_files/{sample}/",sample=IDs))
     params: out_folder="data/output/pickle_to_files"
@@ -34,6 +36,7 @@ rule pickle_to_files:
         makeFilesForEachSampleAndChr(df,IDs,params.out_folder)
 
 rule compute_features:
+    priority: 1
     input: "data/output/pickle_to_files/{sample}/"
     output: directory("data/output/compute_features/{sample}/")
     run:
