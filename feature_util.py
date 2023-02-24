@@ -86,7 +86,7 @@ def distanceToClosestCNV(df):
                     break
     # print(distances)
     df['log10_distanceToNearestCNV'] = distances
-    print(df)
+    #print(df)
     return df
 
 
