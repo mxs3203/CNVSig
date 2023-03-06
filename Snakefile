@@ -4,17 +4,16 @@ import os
 import numpy as np
 import pandas as pd
 from tqdm.asyncio import tqdm
-import matplotlib.pyplot as plt
 
 from feature_util import readPickle, savePickle, readAscatSavePickle, computeFeatures, makeFilesForEachSampleAndChr, \
     makeSquareImage, generate_short_arm_bins, generate_long_arm_bins
 
-ruleorder: csv_to_pickle_filter > pickle_to_files > compute_features > compute_bin_sizes > merge_all_features > feature_statistic > make_square_images
+ruleorder: csv_to_pickle_filter > pickle_to_files > compute_features > compute_bin_sizes > merge_all_features > make_square_images
 NUM_BINS = 22
 IDs = pd.read_csv("data/input/ID_list.csv").ID.to_list()
 features = ['cn', 'log10_distanceToNearestCNV', 'logR', 'changepoint', 'log10_segmentSize',
             'loh', 'allelicImbalance', 'log10_distToCentromere', 'replication_timing']
-#IDs = IDs[0:25]
+#IDs = IDs[0:10]
 
 features_that_need_quantiles = ['log10_distanceToNearestCNV', 'logR', 'changepoint', 'log10_segmentSize',
                                 'log10_distToCentromere',
@@ -25,12 +24,8 @@ order_of_chromosomes = [4,7,2,5,6,13,3,8,9,18,12,1,10,11,14,22,19,17,20,16,15,21
 
 rule all:
     input:
-        expand("data/output/compute_features/{sample}/", sample=IDs)
-        # "data/output/merged_features.pickle",
-        # "data/output/feature_quantiles.pickle",
-        # "data/output/chromosome_bins_def/",
-        # "data/output/chromosome_bins_info.csv",
-        # expand("data/output/make_square_images/{sample}.pickle", sample=IDs)
+        expand("data/output/compute_features/{sample}/", sample=IDs),
+        expand("data/output/make_square_images/{sample}.pickle", sample=IDs)
 
 rule csv_to_pickle_filter:
     input: "data/input/hmf_ascat.csv"
@@ -59,7 +54,7 @@ rule compute_features:
                 savePickle(df, "{}/{}".format(str(output), file_name))
 
 rule merge_all_features:
-    input: "data/output/compute_features/"
+    input:  "data/output/compute_features/"
     output: "data/output/merged_features.pickle", "data/output/merged_features.csv",
     run:
         total = []
@@ -71,14 +66,6 @@ rule merge_all_features:
         savePickle(all_data, "data/output/merged_features.pickle")
         all_data.to_csv("data/output/merged_features.csv")
 
-rule feature_statistic:
-    input: "data/output/merged_features.pickle"
-    output: "data/output/feature_quantiles.pickle"
-    run:
-        df = readPickle(str(input))
-        quantiles = df[features_that_need_quantiles].quantile(q=bins_quantiles['all_features'])
-        print(quantiles)
-        savePickle(quantiles, str(output))
 
 rule compute_bin_sizes:
     input: "data/input/chrom_centromere_info.csv", "data/input/hg19.chrom.sizes.csv"

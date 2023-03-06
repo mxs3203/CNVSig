@@ -25,7 +25,7 @@ def readAscatSavePickle(input, output):
     df.loc[df["nAraw"] < 0, "nAraw"] = 0.0
     df.loc[df["nBraw"] < 0, "nBraw"] = 0.0
     print("After filtering: ", np.shape(df))
-
+    df['middleOfSegment'] = (df['End'] + df['Start'])/2
     with open(output, 'wb') as f:
         pk.dump(df, f, pk.HIGHEST_PROTOCOL)
         f.close()
@@ -131,22 +131,6 @@ def computeFeatures(df):
     return df
 
 
-def computeMeanValueBasedOnBinAndFeature(chr_specific_features, bin_from, bin_to,feature):
-    if feature in ['loh', 'allelicImbalance']:
-        tmp = chr_specific_features[chr_specific_features[feature].between(bin_from, bin_to)]
-        if not tmp.empty:
-            return len(tmp[tmp[feature] == 1])
-        else:
-            return 0
-    else:
-        tmp = chr_specific_features[chr_specific_features[feature].between(bin_from, bin_to)]
-        if not tmp.empty:
-            m = tmp[feature].mean()
-            s = tmp[feature].std()
-            return tmp[feature].mean()/s
-        else:
-            return 0
-
 def generate_short_arm_bins(bin_row):
     bins = pd.DataFrame()
     previous = 0
@@ -163,11 +147,26 @@ def generate_long_arm_bins(bin_row):
         previous = previous + bin_row['long_arm_bin_size']
     return bins
 
+def checkIfEmpty(tmp, feature):
+    if not tmp.empty:
+        m = tmp[feature].mean()
+        s = tmp[feature].std()
+        return tmp[feature].mean()
+    else:
+        return 0
+
+def computeMeanValueBasedOnBinAndFeature(chr_specific_features, bin_from, bin_to,arm, feature):
+    if feature in ['loh', 'allelicImbalance']:
+        tmp = chr_specific_features[chr_specific_features['middleOfSegment'].between(bin_from, bin_to)]
+        return checkIfEmpty(tmp, feature)
+    else:
+        tmp = chr_specific_features[chr_specific_features['middleOfSegment'].between(bin_from, bin_to)]
+        return checkIfEmpty(tmp, feature)
 
 def makeSquareImage(chr_data, chr_specific_bins, feature):
     bin_values = []
     for index, row in chr_specific_bins.iterrows():
-        val = computeMeanValueBasedOnBinAndFeature(chr_data, row['from'], row['to'], feature)
+        val = computeMeanValueBasedOnBinAndFeature(chr_data, row['from'], row['to'],row['arm'], feature)
         bin_values.append(val)
 
     return np.array(bin_values)
@@ -177,7 +176,7 @@ def makeSquareImage(chr_data, chr_specific_bins, feature):
 #             'loh', 'allelicImbalance', 'log10_distToCentromere', 'replication_timing']
 # order_of_chromosomes = [4,7,2,5,6,13,3,8,9,18,12,1,10,11,14,22,19,17,20,16,15,21]
 # all_features = []
-# files_in_sample = glob.glob("data/output/compute_features/CPCT02010003T" + "/*.pickle")
+# files_in_sample = glob.glob("data/output/compute_features/CPCT02010037T" + "/*.pickle")
 # if len(files_in_sample) == 22:
 #     path_to_chr_files = files_in_sample[0]
 #     path_to_chr_files = "/".join(path_to_chr_files.split("/")[:-1])
@@ -188,9 +187,10 @@ def makeSquareImage(chr_data, chr_specific_bins, feature):
 #             chr_specific_bins = pd.read_csv("{}/{}.csv".format("data/output/chromosome_bins_def/", specific_chr)) # read bin file for that chr data/output/chrom_bin_def/4.csv
 #             specific_feature_bin_row = makeSquareImage(chr_data, chr_specific_bins, f) # returns 22 values representing all bins for specific features and chr
 #             bins_for_specific_chr.append(specific_feature_bin_row) # I append each row (chr) here
-#         assert np.shape(bins_for_specific_chr) == (22,22) # after all chrom run this should be 22,22
+#         assert np.shape(bins_for_specific_chr) == (22, 22) # after all chrom run this should be 22,22
 #         all_features.append(bins_for_specific_chr) # append feature profile to a list
 #     total = np.dstack(all_features) # stack all feature profiles as depth
 #     assert np.shape(total) == (22, 22, 9)
+#
 # else:
-#     savePickle(-1, "data/output/make_square_images/{}.pickle".format(str(input[0]).split("/")[3]))
+#     savePickle(-1, "data/output/make_square_images/{}.pickle".format("data/output/compute_features/CPCT02010003T").split("/")[3])
