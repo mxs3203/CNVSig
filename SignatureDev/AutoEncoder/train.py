@@ -11,7 +11,7 @@ from SignatureDev.AutoEncoder.dataloader import CNVImage
 lr = 1e-4
 batch_size = 512
 wd = 1e-2
-L_size = 5
+L_size = 7
 
 dataset = CNVImage("/home/mateo/pytorch_docker/CNVSig/data/output/make_square_images/")
 dataset_size = len(dataset)

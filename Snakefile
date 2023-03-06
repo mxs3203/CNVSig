@@ -4,22 +4,33 @@ import os
 import numpy as np
 import pandas as pd
 from tqdm.asyncio import tqdm
+import matplotlib.pyplot as plt
 
 from feature_util import readPickle, savePickle, readAscatSavePickle, computeFeatures, makeFilesForEachSampleAndChr, \
-    makeLongImage, makeSquareImage
+    makeSquareImage, generate_short_arm_bins, generate_long_arm_bins
 
-ruleorder: csv_to_pickle_filter > pickle_to_files > compute_features > merge_all_features > feature_statistic >
-         make_long_images > make_square_images
-
+ruleorder: csv_to_pickle_filter > pickle_to_files > compute_features > compute_bin_sizes > merge_all_features > feature_statistic > make_square_images
+NUM_BINS = 22
 IDs = pd.read_csv("data/input/ID_list.csv").ID.to_list()
 features = ['cn', 'log10_distanceToNearestCNV', 'logR', 'changepoint', 'log10_segmentSize',
             'loh', 'allelicImbalance', 'log10_distToCentromere', 'replication_timing']
 #IDs = IDs[0:25]
 
-bins_quantiles = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+features_that_need_quantiles = ['log10_distanceToNearestCNV', 'logR', 'changepoint', 'log10_segmentSize',
+                                'log10_distToCentromere',
+                                'replication_timing']
+
+order_of_chromosomes = [4,7,2,5,6,13,3,8,9,18,12,1,10,11,14,22,19,17,20,16,15,21]
+
 
 rule all:
-    input: expand("data/output/compute_features/{sample}/", sample=IDs), "data/output/merged_features.pickle", "data/output/feature_quantiles.pickle", expand("data/output/make_square_images/{sample}.pickle", sample=IDs),expand("data/output/make_long_images/{sample}.pickle", sample=IDs)
+    input:
+        expand("data/output/compute_features/{sample}/", sample=IDs)
+        # "data/output/merged_features.pickle",
+        # "data/output/feature_quantiles.pickle",
+        # "data/output/chromosome_bins_def/",
+        # "data/output/chromosome_bins_info.csv",
+        # expand("data/output/make_square_images/{sample}.pickle", sample=IDs)
 
 rule csv_to_pickle_filter:
     input: "data/input/hmf_ascat.csv"
@@ -65,46 +76,67 @@ rule feature_statistic:
     output: "data/output/feature_quantiles.pickle"
     run:
         df = readPickle(str(input))
-        quantiles = df[features].quantile(q=bins_quantiles)
+        quantiles = df[features_that_need_quantiles].quantile(q=bins_quantiles['all_features'])
         print(quantiles)
         savePickle(quantiles, str(output))
 
-# Make an image of where rows are=features*bin and columns are chromosomes
-rule make_long_images:
-    input: rules.compute_features.output, rules.feature_statistic.output
-    output: "data/output/make_long_images/{sample}.pickle"
+rule compute_bin_sizes:
+    input: "data/input/chrom_centromere_info.csv", "data/input/hg19.chrom.sizes.csv"
+    output: "data/output/chromosome_bins_info.csv", directory("data/output/chromosome_bins_def/")
     run:
-        quantiles = readPickle(str(input[1]))
-        all_chr = []
-        if len(glob.glob(str(input[0])+ "/*.pickle")) >= 2:
-            for specific_chr in glob.glob(str(input[0]) + "/*.pickle"):
-                chr_data = readPickle(specific_chr)
-                chr_data = chr_data[features]
-                chr_data_binned = makeLongImage(chr_data, quantiles, features, len(bins_quantiles))
-                all_chr.append(chr_data_binned)
-            all_chr = pd.concat(all_chr, axis=1)
-            all_chr.columns = range(1, 23)
-            savePickle(all_chr, "data/output/make_long_images/{}.pickle".format(str(input[0]).split("/")[3]))
-        else:
-            savePickle(-1, "data/output/make_long_images/{}.pickle".format(str(input[0]).split("/")[3]))
+        centromeres = pd.read_csv(input[0])
+        chrom_size_df = pd.read_csv(input[1],sep=",",names=None)
+        total = []
+        for chr in range(1,23):# for chr 1 to 22
+            cent_start = centromeres.loc[centromeres['chrom'] == chr]['chromStart'].values[0]
+            cent_end = centromeres.loc[centromeres['chrom'] == chr]['chromEnd'].values[0]
+            chrom_size = chrom_size_df[chrom_size_df['Chr'] == chr]['location'].values[0]
+            total.append([chr, cent_end, cent_start, chrom_size, cent_start-1, chrom_size-cent_end,  (chrom_size-cent_end) - (cent_start-1)])
+
+        total = pd.DataFrame(total, columns=['chr','cent_start','cent_end','chrom_size','short_arm_l', 'long_arm_l', 'diff_long_short'])
+        total['ratio'] = total['chrom_size']/total['long_arm_l']
+        total['number_of_bins_on_long_arm'] = round(NUM_BINS/total['ratio'])
+        total['number_of_bins_on_short_arm'] = NUM_BINS - total['number_of_bins_on_long_arm']
+        total['short_arm_bin_size'] = total['cent_start']/total['number_of_bins_on_short_arm']
+        total['long_arm_bin_size'] = (total['chrom_size'] - total['cent_end'])/total['number_of_bins_on_long_arm']
+        total.to_csv("data/output/chromosome_bins_info.csv")
+        for chr in range(1, 23):
+            bin_df = total[total['chr'] == chr]
+            bin_values = pd.concat([generate_short_arm_bins(bin_df), generate_long_arm_bins(bin_df)])
+            bin_values.to_csv("data/output/chromosome_bins_def/{}.csv".format(chr))
+
 # Make an image of where rows bins, columns are features and depth is chr
 rule make_square_images:
-    input: rules.compute_features.output, rules.feature_statistic.output
+    input: rules.compute_features.output, rules.compute_bin_sizes.output[1]
     output: "data/output/make_square_images/{sample}.pickle"
     run:
-        quantiles = readPickle(str(input[1]))
-        all_chr = []
-        if len(glob.glob(str(input[0])+ "/*.pickle")) >= 2:
-            for specific_chr in glob.glob(str(input[0]) + "/*.pickle"):
-                chr_data = readPickle(specific_chr)
-                chr_data = chr_data[features]
-                chr_data_binned = makeSquareImage(chr_data, quantiles, features, len(bins_quantiles))
-                all_chr.append(chr_data_binned)
+        all_features = []
+        files_in_sample = glob.glob(str(input[0]) + "/*.pickle")
+        if len(files_in_sample) == 22:
+            path_to_chr_files = files_in_sample[0]
+            path_to_chr_files = "/".join(path_to_chr_files.split("/")[:-1])
+            for f in features:
+                bins_for_specific_chr = [] # make empty list
+                for specific_chr in order_of_chromosomes: # for every chr with specific order
+                    chr_data = readPickle("{}/{}.pickle".format(path_to_chr_files,specific_chr)) # read file data/output/compute_fatures/ID/4.pickle
+                    chr_specific_bins = pd.read_csv("{}/{}.csv".format(input[1], specific_chr)) # read bin file for that chr data/output/chrom_bin_def/4.csv
+                    specific_feature_bin_row = makeSquareImage(chr_data, chr_specific_bins, f) # returns 22 values representing all bins for specific features and chr
+                    bins_for_specific_chr.append(specific_feature_bin_row) # I append each row (chr) here
+                assert np.shape(bins_for_specific_chr) == (22,22) # after all chrom run this should be 22,22
+                all_features.append(bins_for_specific_chr) # append feature profile to a list
+            total = np.dstack(all_features) # stack all feature profiles as depth
+            assert np.shape(total) == (22, 22, 9)
 
-            total = np.dstack(all_chr)
-            assert np.shape(total) == (len(bins_quantiles), len(features), 22)
-            savePickle(total, "data/output/make_square_images/{}.pickle".format(str(input[0]).split("/")[3]))
         else:
             savePickle(-1, "data/output/make_square_images/{}.pickle".format(str(input[0]).split("/")[3]))
         # why is this not -1
         # apperantly last string here is empty string
+
+
+
+# valid_IDs = []
+# for file in glob.glob("data/output/make_square_images/*.pickle"):
+#     df = readPickle(file)
+#     if np.shape(df) == (9,9,22):
+#         # split path by / and take the last which is ID.pickle and then split by . to get ID only
+#         valid_IDs.append(file.split("/")[-1].split(".")[0])

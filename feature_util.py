@@ -1,14 +1,15 @@
+import glob
 import os
 import warnings
 
-from tqdm.asyncio import tqdm
 import numpy as np
+from tqdm.asyncio import tqdm
 
 np.seterr(divide='ignore')
 import pandas as pd
 import pickle as pk
 
-hg19 = pd.read_csv("/home/mateo/pytorch_docker/CNVSig/data/input/hg19.chrom.sizes.txt", sep=",")
+hg19 = pd.read_csv("data/input/hg19.chrom.sizes.csv", sep=",")
 chrom_centromere = pd.read_csv("/home/mateo/pytorch_docker/CNVSig/data/input/chrom_centromere_info.csv", sep=",")
 rep_time = pd.read_csv("/home/mateo/pytorch_docker/CNVSig/data/input/Encode_replication_timing.tsv", sep="\t")
 
@@ -130,43 +131,66 @@ def computeFeatures(df):
     return df
 
 
-def computeMeanValueBasedOnBinAndFeature(chr_specific_features, quantiles, f, bin, num_bins):
-    if bin == 0:
-        tmp = chr_specific_features[chr_specific_features[f] < quantiles.iloc[bin][f]]
-    elif bin == (num_bins - 1):  # zero indexed
-        tmp = chr_specific_features[chr_specific_features[f] > quantiles.iloc[bin][f]]
-    else:  # feature f is in between two quantiles
-        tmp = chr_specific_features[
-            chr_specific_features[f].between(quantiles.iloc[bin][f], quantiles.iloc[bin + 1][f])]
-
-    if not tmp.empty:
-        return tmp[f].mean()
+def computeMeanValueBasedOnBinAndFeature(chr_specific_features, bin_from, bin_to,feature):
+    if feature in ['loh', 'allelicImbalance']:
+        tmp = chr_specific_features[chr_specific_features[feature].between(bin_from, bin_to)]
+        if not tmp.empty:
+            return len(tmp[tmp[feature] == 1])
+        else:
+            return 0
     else:
-        return 0
+        tmp = chr_specific_features[chr_specific_features[feature].between(bin_from, bin_to)]
+        if not tmp.empty:
+            m = tmp[feature].mean()
+            s = tmp[feature].std()
+            return tmp[feature].mean()/s
+        else:
+            return 0
+
+def generate_short_arm_bins(bin_row):
+    bins = pd.DataFrame()
+    previous = 0
+    for short_bins in range(0, int(bin_row['number_of_bins_on_short_arm'].values[0])):
+        bins = pd.concat([bins, pd.DataFrame({'from':previous, 'to':previous + bin_row['short_arm_bin_size'], 'arm':'short'})])
+        previous = previous + bin_row['short_arm_bin_size']
+    return bins
+
+def generate_long_arm_bins(bin_row):
+    bins = pd.DataFrame()
+    previous = bin_row['cent_end'].values[0]
+    for short_bins in range(0, int(bin_row['number_of_bins_on_long_arm'].values[0])):
+        bins = pd.concat([bins, pd.DataFrame({'from': previous, 'to': previous + bin_row['long_arm_bin_size'], 'arm':'long'})])
+        previous = previous + bin_row['long_arm_bin_size']
+    return bins
 
 
-def makeLongImage(chr_specific_features, quantiles, features, num_bins):
-    names = []
-    values = []
-    for f in features:  # for all features
-        for bin in range(num_bins):  # for all bins,9
-            # find chr spec df which is within the quantile range(bin)
-            values.append(computeMeanValueBasedOnBinAndFeature(chr_specific_features, quantiles, f, bin, num_bins))
-            names.append("{}_{}".format(f, bin))
+def makeSquareImage(chr_data, chr_specific_bins, feature):
+    bin_values = []
+    for index, row in chr_specific_bins.iterrows():
+        val = computeMeanValueBasedOnBinAndFeature(chr_data, row['from'], row['to'], feature)
+        bin_values.append(val)
 
-    binned_features = pd.DataFrame(values)
-    binned_features.index = names
-    return binned_features
+    return np.array(bin_values)
 
 
-def makeSquareImage(chr_specific_features, quantiles, features, num_bins):
-    chr_matrix = []
-    for bin in range(num_bins):
-        row = []
-        for f in features:
-            val = computeMeanValueBasedOnBinAndFeature(chr_specific_features, quantiles, f, bin, num_bins)
-            row.append(val)
-        chr_matrix.append(row)
-    chr_matrix = np.array(chr_matrix)
-    assert np.shape(chr_matrix) == (num_bins, len(features))
-    return np.array(chr_matrix)
+# features = ['cn', 'log10_distanceToNearestCNV', 'logR', 'changepoint', 'log10_segmentSize',
+#             'loh', 'allelicImbalance', 'log10_distToCentromere', 'replication_timing']
+# order_of_chromosomes = [4,7,2,5,6,13,3,8,9,18,12,1,10,11,14,22,19,17,20,16,15,21]
+# all_features = []
+# files_in_sample = glob.glob("data/output/compute_features/CPCT02010003T" + "/*.pickle")
+# if len(files_in_sample) == 22:
+#     path_to_chr_files = files_in_sample[0]
+#     path_to_chr_files = "/".join(path_to_chr_files.split("/")[:-1])
+#     for f in features:
+#         bins_for_specific_chr = [] # make empty list
+#         for specific_chr in order_of_chromosomes: # for every chr with specific order
+#             chr_data = readPickle("{}/{}.pickle".format(path_to_chr_files,specific_chr)) # read file data/output/compute_fatures/ID/4.pickle
+#             chr_specific_bins = pd.read_csv("{}/{}.csv".format("data/output/chromosome_bins_def/", specific_chr)) # read bin file for that chr data/output/chrom_bin_def/4.csv
+#             specific_feature_bin_row = makeSquareImage(chr_data, chr_specific_bins, f) # returns 22 values representing all bins for specific features and chr
+#             bins_for_specific_chr.append(specific_feature_bin_row) # I append each row (chr) here
+#         assert np.shape(bins_for_specific_chr) == (22,22) # after all chrom run this should be 22,22
+#         all_features.append(bins_for_specific_chr) # append feature profile to a list
+#     total = np.dstack(all_features) # stack all feature profiles as depth
+#     assert np.shape(total) == (22, 22, 9)
+# else:
+#     savePickle(-1, "data/output/make_square_images/{}.pickle".format(str(input[0]).split("/")[3]))
