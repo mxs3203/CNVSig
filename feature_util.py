@@ -147,50 +147,60 @@ def generate_long_arm_bins(bin_row):
         previous = previous + bin_row['long_arm_bin_size']
     return bins
 
-def checkIfEmpty(tmp, feature):
+def scaleMinMax(x,xmin,xmax,f):
+    if f in ['loh', 'allelicImbalance']:
+        return x
+    else:
+        return (x-xmin)/(xmax-xmin)
+
+def checkIfEmpty(tmp, feature, minMax_of_feature):
     if not tmp.empty:
         m = tmp[feature].mean()
         s = tmp[feature].std()
-        return tmp[feature].mean()
+        return scaleMinMax(tmp[feature].mean(),minMax_of_feature[0],minMax_of_feature[1],feature)
     else:
         return 0
 
-def computeMeanValueBasedOnBinAndFeature(chr_specific_features, bin_from, bin_to,arm, feature):
+def computeMeanValueBasedOnBinAndFeature(chr_specific_features, bin_from, bin_to,arm, feature, minMax_of_feature):
     if feature in ['loh', 'allelicImbalance']:
         tmp = chr_specific_features[chr_specific_features['middleOfSegment'].between(bin_from, bin_to)]
-        return checkIfEmpty(tmp, feature)
+        return checkIfEmpty(tmp, feature, minMax_of_feature)
     else:
         tmp = chr_specific_features[chr_specific_features['middleOfSegment'].between(bin_from, bin_to)]
-        return checkIfEmpty(tmp, feature)
+        return checkIfEmpty(tmp, feature, minMax_of_feature)
 
-def makeSquareImage(chr_data, chr_specific_bins, feature):
+def makeSquareImage(chr_data, chr_specific_bins, feature, minMax_of_feature):
     bin_values = []
     for index, row in chr_specific_bins.iterrows():
-        val = computeMeanValueBasedOnBinAndFeature(chr_data, row['from'], row['to'],row['arm'], feature)
+        val = computeMeanValueBasedOnBinAndFeature(chr_data, row['from'], row['to'],row['arm'], feature, minMax_of_feature)
         bin_values.append(val)
 
     return np.array(bin_values)
 
+def minMax(x):
+    return pd.Series(index=['min','max'],data=[x.min(),x.max()])
 
-# features = ['cn', 'log10_distanceToNearestCNV', 'logR', 'changepoint', 'log10_segmentSize',
-#             'loh', 'allelicImbalance', 'log10_distToCentromere', 'replication_timing']
-# order_of_chromosomes = [4,7,2,5,6,13,3,8,9,18,12,1,10,11,14,22,19,17,20,16,15,21]
-# all_features = []
-# files_in_sample = glob.glob("data/output/compute_features/CPCT02010037T" + "/*.pickle")
-# if len(files_in_sample) == 22:
-#     path_to_chr_files = files_in_sample[0]
-#     path_to_chr_files = "/".join(path_to_chr_files.split("/")[:-1])
-#     for f in features:
-#         bins_for_specific_chr = [] # make empty list
-#         for specific_chr in order_of_chromosomes: # for every chr with specific order
-#             chr_data = readPickle("{}/{}.pickle".format(path_to_chr_files,specific_chr)) # read file data/output/compute_fatures/ID/4.pickle
-#             chr_specific_bins = pd.read_csv("{}/{}.csv".format("data/output/chromosome_bins_def/", specific_chr)) # read bin file for that chr data/output/chrom_bin_def/4.csv
-#             specific_feature_bin_row = makeSquareImage(chr_data, chr_specific_bins, f) # returns 22 values representing all bins for specific features and chr
-#             bins_for_specific_chr.append(specific_feature_bin_row) # I append each row (chr) here
-#         assert np.shape(bins_for_specific_chr) == (22, 22) # after all chrom run this should be 22,22
-#         all_features.append(bins_for_specific_chr) # append feature profile to a list
-#     total = np.dstack(all_features) # stack all feature profiles as depth
-#     assert np.shape(total) == (22, 22, 9)
-#
-# else:
-#     savePickle(-1, "data/output/make_square_images/{}.pickle".format("data/output/compute_features/CPCT02010003T").split("/")[3])
+
+minMax_of_feature = pd.read_csv("data/output/min_max_features.csv")
+features = ['cn', 'log10_distanceToNearestCNV', 'logR', 'changepoint', 'log10_segmentSize',
+            'loh', 'allelicImbalance', 'log10_distToCentromere', 'replication_timing']
+order_of_chromosomes = [4,7,2,5,6,13,3,8,9,18,12,1,10,11,14,22,19,17,20,16,15,21]
+all_features = []
+files_in_sample = glob.glob("data/output/compute_features/CPCT02010037T" + "/*.pickle")
+if len(files_in_sample) == 22:
+    path_to_chr_files = files_in_sample[0]
+    path_to_chr_files = "/".join(path_to_chr_files.split("/")[:-1])
+    for f in features:
+        bins_for_specific_chr = [] # make empty list
+        for specific_chr in order_of_chromosomes: # for every chr with specific order
+            chr_data = readPickle("{}/{}.pickle".format(path_to_chr_files,specific_chr)) # read file data/output/compute_fatures/ID/4.pickle
+            chr_specific_bins = pd.read_csv("{}/{}.csv".format("data/output/chromosome_bins_def/", specific_chr)) # read bin file for that chr data/output/chrom_bin_def/4.csv
+            specific_feature_bin_row = makeSquareImage(chr_data, chr_specific_bins, f,minMax_of_feature[f]) # returns 22 values representing all bins for specific features and chr
+            bins_for_specific_chr.append(specific_feature_bin_row) # I append each row (chr) here
+        assert np.shape(bins_for_specific_chr) == (22, 22) # after all chrom run this should be 22,22
+        all_features.append(bins_for_specific_chr) # append feature profile to a list
+    total = np.dstack(all_features) # stack all feature profiles as depth
+    assert np.shape(total) == (22, 22, 9)
+
+else:
+    savePickle(-1, "data/output/make_square_images/{}.pickle".format("data/output/compute_features/CPCT02010003T").split("/")[3])
