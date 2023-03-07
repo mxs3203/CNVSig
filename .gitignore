@@ -1,4 +1,12 @@
-/data/
 /pickle_to_files_backup/
 /.snakemake/
 /backup/
+/data/output/
+/data/input/Encode_replication_timing.tsv
+/data/input/hmf_ascat.csv
+/data/input/._ID_list.csv
+/data/input/._hmf_ascat.csv
+/data/input/._hg19.chrom.sizes.txt
+/data/input/._Encode_replication_timing.tsv
+/data/input/._chrom_centromere_info.csv
+/data/input/._.DS_Store
