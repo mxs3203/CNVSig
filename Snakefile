@@ -13,7 +13,7 @@ NUM_BINS = 22
 IDs = pd.read_csv("data/input/ID_list.csv").ID.to_list()
 features = ['cn', 'log10_distanceToNearestCNV', 'logR', 'changepoint', 'log10_segmentSize',
             'loh', 'allelicImbalance', 'log10_distToCentromere', 'replication_timing']
-IDs = IDs[0:10]
+#IDs = IDs[0:10]
 
 features_that_need_quantiles = ['log10_distanceToNearestCNV', 'logR', 'changepoint', 'log10_segmentSize',
                                 'log10_distToCentromere',
@@ -74,7 +74,7 @@ rule compute_bin_sizes:
         centromeres = pd.read_csv(input[0])
         chrom_size_df = pd.read_csv(input[1],sep=",",names=None)
         total = []
-        for chr in range(1,23):# for chr 1 to 22
+        for chr in tqdm(range(1,23)):# for chr 1 to 22
             cent_start = centromeres.loc[centromeres['chrom'] == chr]['chromStart'].values[0]
             cent_end = centromeres.loc[centromeres['chrom'] == chr]['chromEnd'].values[0]
             chrom_size = chrom_size_df[chrom_size_df['Chr'] == chr]['location'].values[0]
@@ -87,7 +87,7 @@ rule compute_bin_sizes:
         total['short_arm_bin_size'] = total['cent_start']/total['number_of_bins_on_short_arm']
         total['long_arm_bin_size'] = (total['chrom_size'] - total['cent_end'])/total['number_of_bins_on_long_arm']
         total.to_csv("data/output/chromosome_bins_info.csv")
-        for chr in range(1, 23):
+        for chr in tqdm(range(1, 23)):
             bin_df = total[total['chr'] == chr]
             bin_values = pd.concat([generate_short_arm_bins(bin_df), generate_long_arm_bins(bin_df)])
             bin_values.to_csv("data/output/chromosome_bins_def/{}.csv".format(chr))
