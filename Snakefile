@@ -64,6 +64,7 @@ rule compute_bin_sizes:
                 df = readPickle(chr)
                 total.append(df)
         all_data = pd.concat(total)
+        all_data.replace([-np.inf],0.0,inplace=True)
         savePickle(all_data, "data/output/merged_features.pickle")
         feature_min_max = all_data[features].apply(minMax)
         print(feature_min_max)

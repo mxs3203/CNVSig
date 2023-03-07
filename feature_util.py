@@ -157,11 +157,14 @@ def scaleMinMax(x,xmin,xmax,f):
         return x
     else:
         return (x-xmin)/(xmax-xmin)
-
+pd.options.mode.chained_assignment = None
 def checkIfEmpty(tmp, feature, minMax_of_feature):
     if not tmp.empty:
         m = tmp[feature].mean()
         s = tmp[feature].std()
+        if tmp[feature].isin([-np.inf]).values.sum() != 0:
+            tmp[feature].replace([-np.inf], 0, inplace=True)
+            print(tmp[feature].mean())
         return scaleMinMax(tmp[feature].mean(),minMax_of_feature[0],minMax_of_feature[1],feature)
     else:
         return 0
@@ -186,9 +189,10 @@ def minMax(x):
     return pd.Series(index=['min','max'],data=[x.min(),x.max()])
 
 
-df = readPickle("data/output/merged_features.pickle")
-print(df['log10_distanceToNearestCNV'].quantile(q=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]))
-
+# df = readPickle("data/output/merged_features.pickle")
+# print(df['log10_distanceToNearestCNV'].isin([-np.inf]).values.sum())
+# df.replace([np.inf, -np.inf], 0.0, inplace=True)
+# print(min(df['log10_distanceToNearestCNV']))
 
 # minMax_of_feature = pd.read_csv("data/output/min_max_features.csv")
 # features = ['cn', 'log10_distanceToNearestCNV', 'logR', 'changepoint', 'log10_segmentSize',
