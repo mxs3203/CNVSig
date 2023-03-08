@@ -222,4 +222,4 @@ def invertMinMax(scaled_x, min=0, max=10):
 #     assert np.shape(total) == (22, 22, 9)
 #
 # else:
-#     savePickle(-1, "data/output/make_square_images_/{}.pickle".format("data/output/compute_features/CPCT02010003T").split("/")[3])
+#     savePickle(-1, "data/output/make_square_images/{}.pickle".format("data/output/compute_features/CPCT02010003T").split("/")[3])
