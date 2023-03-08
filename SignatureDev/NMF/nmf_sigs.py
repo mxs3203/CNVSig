@@ -14,7 +14,7 @@ features = ['cn', 'log10_distanceToNearestCNV', 'logR', 'changepoint', 'log10_se
 #IDs = IDs[0:25]
 
 valid_IDs = []
-for file in glob.glob("/home/mateo/pytorch_docker/CNVSig/data/output/make_square_images/*.pickle"):
+for file in glob.glob("/home/mateo/pytorch_docker/CNVSig/data/output/make_square_images_/*.pickle"):
     df = readPickle(file)
     if np.shape(df) == (9, 9, 22):
         # split path by / and take the last which is ID.pickle and then split by . to get ID only

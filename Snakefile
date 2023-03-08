@@ -25,7 +25,7 @@ order_of_chromosomes = [4,7,2,5,6,13,3,8,9,18,12,1,10,11,14,22,19,17,20,16,15,21
 rule all:
     input:
         expand("data/output/compute_features/{sample}/", sample=IDs),
-        expand("data/output/make_square_images/{sample}.pickle", sample=IDs)
+        expand("data/output/make_square_images_/{sample}.pickle", sample=IDs)
 
 rule csv_to_pickle_filter:
     input: "data/input/hmf_ascat.csv"
@@ -58,6 +58,7 @@ rule compute_bin_sizes:
     output: "data/output/chromosome_bins_info.csv", directory("data/output/chromosome_bins_def/"), "data/output/min_max_features.csv"
     run:
         # Find minMax of each feature and merge all features
+        print("Merging all sample features into a single file...")
         total = []
         for folder in tqdm(glob.glob("data/output/compute_features" + "/*")):
             for chr in glob.glob(str(folder) + "/*.pickle"):
@@ -65,12 +66,22 @@ rule compute_bin_sizes:
                 total.append(df)
         all_data = pd.concat(total)
         all_data.replace([-np.inf],0.0,inplace=True)
+        # summarized_loh = all_data.groupby(['ID', 'Chr'])['loh'].apply(lambda x: (x == 1).sum()).reset_index(name='count')
+        # summarized_ai = all_data.groupby(['ID', 'Chr'])['allelicImbalance'].apply(lambda x: (x == 1).sum()).reset_index(name='count')
+        # print(summarized_loh['count'].quantile(q=[0.90,0.95,0.99,0.99]))
+        # print(summarized_ai['count'].quantile(q=[0.90,0.95,0.99,0.99]))
         savePickle(all_data, "data/output/merged_features.pickle")
-        feature_min_max = all_data[features].apply(minMax)
-        print(feature_min_max)
-        feature_min_max.to_csv("data/output/min_max_features.csv")
         all_data.to_csv("data/output/merged_features.csv")
 
+        print("Computing minMax of each feature...")
+        feature_min_max = all_data[features].apply(minMax)
+        # from empircal data :) 
+        feature_min_max['loh'] = feature_min_max['loh'].replace([1], 3.6e-06)
+        feature_min_max['allelicImbalance'] = feature_min_max['allelicImbalance'].replace([1], 6.13e-05)
+        print(feature_min_max)
+        feature_min_max.to_csv("data/output/min_max_features.csv")
+
+        print("Computing Bin sizes for each chr...")
         # this is actual compute bin sizes
         centromeres = pd.read_csv(input[0])
         chrom_size_df = pd.read_csv(input[1],sep=",",names=None)
@@ -88,6 +99,8 @@ rule compute_bin_sizes:
         total['short_arm_bin_size'] = total['cent_start']/total['number_of_bins_on_short_arm']
         total['long_arm_bin_size'] = (total['chrom_size'] - total['cent_end'])/total['number_of_bins_on_long_arm']
         total.to_csv("data/output/chromosome_bins_info.csv")
+        print("Exporting chr specific bin definition to a folder...")
+        os.mkdir("data/output/chromosome_bins_def")
         for chr in tqdm(range(1, 23)):
             bin_df = total[total['chr'] == chr]
             bin_values = pd.concat([generate_short_arm_bins(bin_df), generate_long_arm_bins(bin_df)])
@@ -96,7 +109,7 @@ rule compute_bin_sizes:
 # Make an image of where rows bins, columns are features and depth is chr
 rule make_square_images:
     input: rules.compute_features.output, rules.compute_bin_sizes.output[1], rules.compute_bin_sizes.output[2]
-    output: "data/output/make_square_images/{sample}.pickle"
+    output: "data/output/make_square_images_/{sample}.pickle"
     run:
         minMax_of_feature = pd.read_csv(input[2])
         all_features = []
@@ -115,16 +128,16 @@ rule make_square_images:
                 all_features.append(bins_for_specific_chr) # append feature profile to a list
             total = np.dstack(all_features) # stack all feature profiles as depth
             assert np.shape(total) == (22, 22, 9)
-            savePickle(total, "data/output/make_square_images/{}.pickle".format(str(input[0]).split("/")[3]))
+            savePickle(total, "data/output/make_square_images_/{}.pickle".format(str(input[0]).split("/")[3]))
         else:
-            savePickle(-1, "data/output/make_square_images/{}.pickle".format(str(input[0]).split("/")[3]))
+            savePickle(-1, "data/output/make_square_images_/{}.pickle".format(str(input[0]).split("/")[3]))
         # why is this not -1
         # apperantly last string here is empty string
 
 
 
 # valid_IDs = []
-# for file in glob.glob("data/output/make_square_images/*.pickle"):
+# for file in glob.glob("data/output/make_square_images_/*.pickle"):
 #     df = readPickle(file)
 #     if np.shape(df) == (9,9,22):
 #         # split path by / and take the last which is ID.pickle and then split by . to get ID only

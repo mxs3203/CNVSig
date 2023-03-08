@@ -10,9 +10,11 @@ import pandas as pd
 import pickle as pk
 
 hg19 = pd.read_csv("data/input/hg19.chrom.sizes.csv", sep=",")
-chrom_centromere = pd.read_csv("/home/mateo/pytorch_docker/CNVSig/data/input/chrom_centromere_info.csv", sep=",")
-rep_time = pd.read_csv("/home/mateo/pytorch_docker/CNVSig/data/input/Encode_replication_timing.tsv", sep="\t")
+chrom_centromere = pd.read_csv("data/input/chrom_centromere_info.csv", sep=",")
+rep_time = pd.read_csv("data/input/Encode_replication_timing.tsv", sep="\t")
 
+largest_loh = -np.inf
+largest_ai = -np.inf
 
 def readAscatSavePickle(input, output):
     df = pd.read_csv(input, delimiter=",")
@@ -153,10 +155,7 @@ def generate_long_arm_bins(bin_row):
     return bins
 
 def scaleMinMax(x,xmin,xmax,f):
-    if f in ['loh', 'allelicImbalance']:
-        return x
-    else:
-        return (x-xmin)/(xmax-xmin)
+    return (x-xmin)/(xmax-xmin)
 pd.options.mode.chained_assignment = None
 def checkIfEmpty(tmp, feature, minMax_of_feature):
     if not tmp.empty:
@@ -164,15 +163,21 @@ def checkIfEmpty(tmp, feature, minMax_of_feature):
         s = tmp[feature].std()
         if tmp[feature].isin([-np.inf]).values.sum() != 0:
             tmp[feature].replace([-np.inf], 0, inplace=True)
-            print(tmp[feature].mean())
+            #print(tmp[feature].mean())
         return scaleMinMax(tmp[feature].mean(),minMax_of_feature[0],minMax_of_feature[1],feature)
     else:
         return 0
 
 def computeMeanValueBasedOnBinAndFeature(chr_specific_features, bin_from, bin_to,arm, feature, minMax_of_feature):
     if feature in ['loh', 'allelicImbalance']:
-        tmp = chr_specific_features[chr_specific_features['middleOfSegment'].between(bin_from, bin_to)]
-        return checkIfEmpty(tmp, feature, minMax_of_feature)
+        tmp = chr_specific_features[chr_specific_features['middleOfSegment'].between(bin_from, bin_to) & chr_specific_features[feature] == 1]
+        bin_len = np.abs(bin_to - bin_from)
+        # if feature == 'allelicImbalance' and len(tmp.index)/bin_len > 6.13e-05:
+        #     print(feature, len(tmp.index)/bin_len)
+        # if feature == 'loh' and len(tmp.index)/bin_len > 3.6e-06:
+        #     print(feature, len(tmp.index)/bin_len)
+        #     print(scaleMinMax(len(tmp.index)/bin_len, minMax_of_feature[0], minMax_of_feature[1], feature))
+        return scaleMinMax(len(tmp.index)/bin_len, minMax_of_feature[0], minMax_of_feature[1], feature) # number of rows/bin size scaled
     else:
         tmp = chr_specific_features[chr_specific_features['middleOfSegment'].between(bin_from, bin_to)]
         return checkIfEmpty(tmp, feature, minMax_of_feature)
@@ -187,7 +192,8 @@ def makeSquareImage(chr_data, chr_specific_bins, feature, minMax_of_feature):
 
 def minMax(x):
     return pd.Series(index=['min','max'],data=[x.min(),x.max()])
-
+def invertMinMax(scaled_x, min=0, max=10):
+    return (scaled_x*(max - min)) + min
 
 # df = readPickle("data/output/merged_features.pickle")
 # print(df['log10_distanceToNearestCNV'].isin([-np.inf]).values.sum())
@@ -216,4 +222,4 @@ def minMax(x):
 #     assert np.shape(total) == (22, 22, 9)
 #
 # else:
-#     savePickle(-1, "data/output/make_square_images/{}.pickle".format("data/output/compute_features/CPCT02010003T").split("/")[3])
+#     savePickle(-1, "data/output/make_square_images_/{}.pickle".format("data/output/compute_features/CPCT02010003T").split("/")[3])

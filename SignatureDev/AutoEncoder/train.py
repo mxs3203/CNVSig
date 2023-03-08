@@ -13,7 +13,7 @@ batch_size = 512
 wd = 1e-2
 L_size = 7
 
-dataset = CNVImage("/home/mateo/pytorch_docker/CNVSig/data/output/make_square_images/")
+dataset = CNVImage("/home/mateo/pytorch_docker/CNVSig/data/output/make_square_images_/")
 dataset_size = len(dataset)
 indices = list(range(dataset_size))
 split = int(np.floor(0.2 * dataset_size))
@@ -31,7 +31,7 @@ wandb.init(
     config={
         "learning_rate": lr,
         "architecture": "CNN",
-        "dataset": "make_square_images",
+        "dataset": "make_square_images_",
         "batch_size": batch_size,
         "weight_decay": wd,
         "L_size":L_size
