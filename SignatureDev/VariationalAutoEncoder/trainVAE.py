@@ -7,9 +7,16 @@ import numpy as np
 from tqdm.asyncio import tqdm
 import matplotlib.pyplot as plt
 import seaborn as sns
-
-from SignatureDev.AutoEncoder.Model import CNVExtractorAE
 from SignatureDev.dataloader import CNVImages
+from SignatureDev.VariationalAutoEncoder.Model import CNVExtractorVAE
+
+
+def gaussian_likelihood(x_hat, logscale, x):
+    scale = torch.exp(logscale)
+    mean = x_hat
+    dist = torch.distributions.Normal(mean, scale)
+    log_pxz = dist.log_prob(x)
+    return log_pxz.sum(dim=(1, 2, 3))
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
@@ -33,7 +40,7 @@ valLoader = DataLoader(val_set, batch_size=batch_size,num_workers=10, shuffle=Tr
 for l in L_to_try:
     print(l)
 
-    env_e = CNVExtractorAE(encoded_space_dim=l)
+    env_e = CNVExtractorVAE(encoded_space_dim=l)
     env_e.to(device)
 
     wandb.init(
@@ -58,12 +65,10 @@ for l in L_to_try:
         env_e.train()
         train_loss = []
         for batch_index, X in enumerate(trainLoader):
-            recon, L = env_e(X.float())
-            total_loss = 0
-            for depth in range(np.shape(X)[1]): # until 9
-                layer_loss = loss_fn(recon[:,depth,:,:], X.float()[:,depth,:,:])
-                total_loss += layer_loss
-            #total_loss = loss_fn(recon, X.float())
+            recon, L, log_scale, kl = env_e(X.float())
+            recon_loss = gaussian_likelihood(recon, log_scale, X)
+            elbo = (kl - recon_loss).mean()
+            total_loss = elbo
             train_loss.append(total_loss.item())
             optim.zero_grad()
             total_loss.backward()
@@ -76,13 +81,11 @@ for l in L_to_try:
         val_Ls = []
         with torch.no_grad():
             for batch_index, X in enumerate(valLoader):
-                recon, L = env_e(X.float())
+                recon, L,log_scale,kl = env_e(X.float())
                 val_Ls.append(L.float().numpy())
-                total_loss = 0
-                for depth in range(np.shape(X)[1]):  # until 9
-                    layer_loss = loss_fn(recon[:, depth, :, :], X.float()[:, depth, :, :])
-                    total_loss += layer_loss
-                #total_loss = loss_fn(recon, X.float())
+                recon_loss = gaussian_likelihood(recon, log_scale, X)
+                elbo = (kl - recon_loss).mean()
+                total_loss = elbo
                 train_loss.append(total_loss.item())
                 val_loss.append(total_loss.item())
             wandb.log({"Valid/loss": np.mean(val_loss),

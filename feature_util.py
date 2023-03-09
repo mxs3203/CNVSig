@@ -9,9 +9,9 @@ np.seterr(divide='ignore')
 import pandas as pd
 import pickle as pk
 
-hg19 = pd.read_csv("data/input/hg19.chrom.sizes.csv", sep=",")
-chrom_centromere = pd.read_csv("data/input/chrom_centromere_info.csv", sep=",")
-rep_time = pd.read_csv("data/input/Encode_replication_timing.tsv", sep="\t")
+hg19 = pd.read_csv("/home/mateo/pytorch_docker/CNVSig/data/input/hg19.chrom.sizes.csv", sep=",")
+chrom_centromere = pd.read_csv("/home/mateo/pytorch_docker/CNVSig/data/input/chrom_centromere_info.csv", sep=",")
+rep_time = pd.read_csv("/home/mateo/pytorch_docker/CNVSig/data/input/Encode_replication_timing.tsv", sep="\t")
 
 largest_loh = -np.inf
 largest_ai = -np.inf
