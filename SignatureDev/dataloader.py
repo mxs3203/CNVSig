@@ -30,4 +30,4 @@ class CNVImages(Dataset):
     def __getitem__(self, idx):
         img_path = os.path.join(self.img_dir, self.annotation.iloc[idx, 0])
         image = readPickle(img_path).reshape((9, 22, 22))
-        return image
+        return image,img_path.split("/")[-1].split(".")[0]
