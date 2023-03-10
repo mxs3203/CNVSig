@@ -1,5 +1,8 @@
+import os
+
 import pandas as pd
 import torch
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from umap import UMAP
 
 import wandb
@@ -9,17 +12,20 @@ from tqdm.asyncio import tqdm
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import feature_util
 from SignatureDev.AutoEncoder.Model import CNVExtractorAE
 from SignatureDev.dataloader import CNVImages
-from feature_util import readPickle
+from SignatureDev.training_util import visualize_latent
+
+#from feature_util import readPickle
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
-lr = 8e-3
-batch_size = 128
-wd = 1e-6
-L_to_try = range(5, 16, 1)
-dataset = CNVImages("/home/mateo/pytorch_docker/CNVSig/data/output/make_square_images/")
+lr = 1e-4
+batch_size = 256
+wd = 1e-5
+L_to_try = range(25, 5, -1)
+dataset = CNVImages("{}/data/output/make_square_images/".format(feature_util.mac_path))
 dataset_size = len(dataset.annotation)
 
 train_size = int(len(dataset) * 0.8)
@@ -28,13 +34,14 @@ print("Train size: ", train_size)
 print("Test size: ", test_size)
 train_set, val_set = torch.utils.data.random_split(dataset, [train_size, test_size])
 
-trainLoader = DataLoader(train_set, batch_size=batch_size, num_workers=10, shuffle=True)
-valLoader = DataLoader(val_set, batch_size=batch_size,num_workers=10, shuffle=True)
+trainLoader = DataLoader(train_set, batch_size=batch_size, num_workers=0, shuffle=True)
+valLoader = DataLoader(val_set, batch_size=batch_size,num_workers=0, shuffle=True)
 
 
 for l in L_to_try:
     print(l)
-
+    if not os.path.exists("{}/SignatureDev/Plots/{}/".format(feature_util.mac_path, l)):
+        os.mkdir("{}/SignatureDev/Plots/{}/".format(feature_util.mac_path, l))
     env_e = CNVExtractorAE(encoded_space_dim=l)
     env_e.to(device)
 
@@ -53,8 +60,8 @@ for l in L_to_try:
 
     loss_fn = torch.nn.MSELoss(reduction="mean")
     optim = torch.optim.Adam(env_e.parameters(), lr=lr, weight_decay=wd)
-
-    num_epochs = 15
+    scheduler = ReduceLROnPlateau(optim, 'min', factor=0.5)
+    num_epochs = 50
     for epoch in tqdm(range(num_epochs)):
         # Train:
         env_e.train()
@@ -90,33 +97,8 @@ for l in L_to_try:
                 val_loss.append(total_loss.item())
             wandb.log({"Valid/loss": np.mean(val_loss),
                        "Epoch":epoch})
-    #Plot validation data from last epoch
-    dim_reducer = UMAP(n_components=2, n_neighbors=15, min_dist=0.1, spread=1.0, metric="cosine")
-    val_Ls = np.concatenate(val_Ls)
-    ids = np.concatenate(ids)
-    tsne_results = pd.DataFrame(dim_reducer.fit_transform(val_Ls),columns=["Dim1","Dim2"])
-    tsne_results['ID'] = ids
-    #features = readPickle("/home/mateo/pytorch_docker/CNVSig/data/output/merged_features.pickle")
-    wgii = pd.read_csv("/home/mateo/pytorch_docker/CNVSig/data/input/hmf_wgii.csv")
-    tsne_results = pd.merge(tsne_results,wgii, on="ID", copy=False)
-    print(np.shape(tsne_results))
-    print(tsne_results)
-    fix, ax = plt.subplots(2,1, figsize=(10, 10))
-    sns.scatterplot(
-        x="Dim1", y="Dim2",hue="wGII",
-        data=tsne_results,
-        legend="auto",
-        alpha=0.9,ax=ax[0]
-    ).set_title("UMAP of L = {}".format(l),fontsize=20)
-    sns.scatterplot(
-        x="Dim1", y="Dim2",hue="wFLOH",
-        data=tsne_results,
-        legend="auto",
-        alpha=0.9,ax=ax[1]
-    ).set_title("UMAP of L = {}".format(l),fontsize=20)
-    plt.show()
-
-
-
+            scheduler.step(np.mean(val_loss))
+        #Plot validation data from last epoch
+        visualize_latent(val_Ls, ids, l, epoch)
 
     wandb.finish()
