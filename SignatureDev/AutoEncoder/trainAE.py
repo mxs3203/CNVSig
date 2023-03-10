@@ -68,11 +68,11 @@ for l in L_to_try:
         train_loss = []
         for batch_index, (X,id) in enumerate(trainLoader):
             recon, L = env_e(X.float())
-            total_loss = 0
-            for depth in range(np.shape(X)[1]): # until 9
-                layer_loss = loss_fn(recon[:,depth,:,:], X.float()[:,depth,:,:])
-                total_loss += layer_loss
-            #total_loss = loss_fn(recon, X.float())
+            # total_loss = 0
+            # for depth in range(np.shape(X)[1]): # until 9
+            #     layer_loss = loss_fn(recon[:,depth,:,:], X.float()[:,depth,:,:])
+            #     total_loss += layer_loss
+            total_loss = loss_fn(recon, X.float())
             train_loss.append(total_loss.item())
             optim.zero_grad()
             total_loss.backward()
@@ -88,11 +88,11 @@ for l in L_to_try:
                 recon, L = env_e(X.float())
                 val_Ls.append(L.float().numpy())
                 ids.append(id)
-                total_loss = 0
-                for depth in range(np.shape(X)[1]):  # until 9
-                    layer_loss = loss_fn(recon[:, depth, :, :], X.float()[:, depth, :, :])
-                    total_loss += layer_loss
-                #total_loss = loss_fn(recon, X.float())
+                # total_loss = 0
+                # for depth in range(np.shape(X)[1]):  # until 9
+                #     layer_loss = loss_fn(recon[:, depth, :, :], X.float()[:, depth, :, :])
+                #     total_loss += layer_loss
+                total_loss = loss_fn(recon, X.float())
                 train_loss.append(total_loss.item())
                 val_loss.append(total_loss.item())
             wandb.log({"Valid/loss": np.mean(val_loss),
