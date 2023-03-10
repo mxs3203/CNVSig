@@ -1,10 +1,8 @@
-import torch
 from torch import nn
-
 
 class CNVExtractorAE(nn.Module):
 
-    def __init__(self, input_channels=9, encoded_space_dim=10, conv_scale=3):
+    def __init__(self, input_channels=9, encoded_space_dim=10, conv_scale=1):
         super().__init__()
         ### Convolutional section
         self.encoder_cnn = nn.Sequential(
@@ -47,6 +45,8 @@ class CNVExtractorAE(nn.Module):
             nn.ConvTranspose2d( (input_channels-1)*conv_scale, input_channels, (4, 4)),
             nn.ReLU6()
         )
+
+
 
     def forward(self, x):
         x = self.encoder_cnn(x)

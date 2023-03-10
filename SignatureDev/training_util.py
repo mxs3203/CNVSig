@@ -7,7 +7,7 @@ import feature_util
 
 
 def visualize_latent(val_Ls,ids,l,epoch):
-    dim_reducer = UMAP(n_components=2, n_neighbors=70, min_dist=1.9, spread=2.0)
+    dim_reducer = UMAP(n_components=2, n_neighbors=70, min_dist=4.9, spread=5.0)
     val_Ls = pd.DataFrame(np.concatenate(val_Ls), columns=["L{}".format(i) for i in range(0,l)])
     ids = np.concatenate(ids)
     tsne_results = pd.DataFrame(dim_reducer.fit_transform(val_Ls),columns=["Dim1","Dim2"])
