@@ -17,9 +17,9 @@ from SignatureDev.AutoEncoder.Model import CNVExtractorAE
 from SignatureDev.dataloader import CNVImages
 from SignatureDev.training_util import visualize_latent
 
-#from feature_util import readPickle
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+#from feature_util import readPickle
 print(device)
 lr = 1e-4
 batch_size = 256
@@ -50,7 +50,7 @@ for l in L_to_try:
         project="CNVSigs",
         config={
             "learning_rate": lr,
-            "architecture": "CNN",
+            "architecture": "CNN-AE",
             "dataset": "make_square_images",
             "batch_size": batch_size,
             "weight_decay": wd,
@@ -67,6 +67,7 @@ for l in L_to_try:
         env_e.train()
         train_loss = []
         for batch_index, (X,id) in enumerate(trainLoader):
+            optim.zero_grad()
             recon, L = env_e(X.float())
             # total_loss = 0
             # for depth in range(np.shape(X)[1]): # until 9
@@ -74,7 +75,7 @@ for l in L_to_try:
             #     total_loss += layer_loss
             total_loss = loss_fn(recon, X.float())
             train_loss.append(total_loss.item())
-            optim.zero_grad()
+
             total_loss.backward()
             optim.step()
         wandb.log({"Train/loss": np.mean(train_loss),
