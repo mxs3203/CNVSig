@@ -18,10 +18,10 @@ from SignatureDev.training_util import visualize_latent
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 #from feature_util import readPickle
 print(device)
-lr = 1e-3
-batch_size = 256
+lr = 1e-2
+batch_size = 128
 wd = 1e-3
-L_to_try = range(25, 5, -1)
+L_to_try = [7]#range(24, 5, -1)
 dataset = CNVImages("{}/data/output/make_square_images/".format(feature_util.mac_path))
 dataset_size = len(dataset.annotation)
 
@@ -34,6 +34,7 @@ train_set, val_set = torch.utils.data.random_split(dataset, [train_size, test_si
 trainLoader = DataLoader(train_set, batch_size=batch_size, num_workers=0, shuffle=True)
 valLoader = DataLoader(val_set, batch_size=batch_size,num_workers=0, shuffle=True)
 
+best_loss = np.inf
 
 for l in L_to_try:
     print(l)
@@ -57,8 +58,8 @@ for l in L_to_try:
 
     loss_fn = torch.nn.MSELoss(reduction="sum")
     optim = torch.optim.Adam(env_e.parameters(), lr=lr, weight_decay=wd)
-    scheduler = ReduceLROnPlateau(optim, 'min', factor=0.5)
-    num_epochs = 50
+    scheduler = ReduceLROnPlateau(optim, 'min', factor=0.5, patience=3)
+    num_epochs = 500
     for epoch in tqdm(range(num_epochs)):
         # Train:
         env_e.train()
@@ -97,5 +98,9 @@ for l in L_to_try:
             scheduler.step(np.mean(val_loss))
         #Plot validation data from last epoch
         visualize_latent(val_Ls, ids, l, epoch)
-
+        if np.mean(val_loss) < best_loss:
+            best_loss = np.mean(val_loss)
+            print("current best loss: ", best_loss)
+            print("saving model...")
+            torch.save(env_e.state_dict(), "{}/best_model_vae.pth".format(feature_util.mac_path))
     wandb.finish()
