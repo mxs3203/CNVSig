@@ -38,7 +38,7 @@ valLoader = DataLoader(val_set, batch_size=batch_size,num_workers=0, shuffle=Tru
 best_loss = np.inf
 
 for l in L_to_try:
-    for temp in [0.01, 0.05, 0.1, 0.15, 0.2, 1.0]:
+    for temp in [0.05, 0.1, 0.15, 0.2, 1.0]:
         print(l, temp)
         if not os.path.exists("{}/SignatureDev/Plots/{}/".format(feature_util.mac_path, l)):
             os.mkdir("{}/SignatureDev/Plots/{}/".format(feature_util.mac_path, l))
