@@ -1,60 +1,22 @@
-appdirs @ file:///home/conda/feedstock_root/build_artifacts/appdirs_1603108395799/work
-Bottleneck @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_29949159-f86f-474b-bc1f-aaa1e0e222b4ofusifik/croots/recipe/bottleneck_1657175564045/work
-brotlipy==0.7.0
-certifi==2022.12.7
-cffi @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_1b0qzba5nr/croot/cffi_1670423213150/work
-charset-normalizer @ file:///tmp/build/80754af9/charset-normalizer_1630003229654/work
-click @ file:///home/conda/feedstock_root/build_artifacts/click_1666798198223/work
-contourpy @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_17gskqgptz/croots/recipe/contourpy_1663827415320/work
-cryptography @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_19cvzxmeb9/croot/cryptography_1677533085498/work
-cycler @ file:///tmp/build/80754af9/cycler_1637851556182/work
 docker-pycreds==0.4.0
-flit_core @ file:///opt/conda/conda-bld/flit-core_1644941570762/work/source/flit_core
 fonttools==4.25.0
-gitdb @ file:///home/conda/feedstock_root/build_artifacts/gitdb_1669279893622/work
-GitPython @ file:///home/conda/feedstock_root/build_artifacts/gitpython_1676637751542/work
-idna @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_00jf0h4zbt/croot/idna_1666125573348/work
-joblib @ file:///home/conda/feedstock_root/build_artifacts/joblib_1663332044897/work
-kiwisolver @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_e26jwrjf6j/croot/kiwisolver_1672387151391/work
 kmeans-pytorch==0.3
 llvmlite==0.39.1
-matplotlib @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_9blu8uma0r/croot/matplotlib-suite_1677674320321/work
+matplotlib
 mkl-fft==1.3.1
-mkl-random @ file:///opt/concourse/worker/volumes/live/a9eca864-069c-4240-73c8-4e51b036a10d/volume/mkl_random_1639994047876/work
+mkl-random
 mkl-service==2.4.0
 munkres==1.1.4
-numba @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_c92mj5bbmo/croot/numba_1670258342205/work
-numexpr @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_cef3ah6r8w/croot/numexpr_1668713880672/work
-numpy @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_8cgikbzvtd/croot/numpy_and_numpy_base_1672336184666/work
-packaging @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_bet5qdixgt/croot/packaging_1671697440883/work
 pandas==1.5.2
 pathtools==0.1.2
 Pillow==9.4.0
 protobuf==3.20.3
-psutil @ file:///Users/runner/miniforge3/conda-bld/psutil_1667886039749/work
-pycparser @ file:///tmp/build/80754af9/pycparser_1636541352034/work
-pynndescent @ file:///home/conda/feedstock_root/build_artifacts/pynndescent_1667326205155/work
-pyOpenSSL @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_6dweji2whw/croot/pyopenssl_1677607689781/work
-pyparsing @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_3a17y2delq/croots/recipe/pyparsing_1661452538853/work
-PySocks @ file:///Users/builder/ci_310/pysocks_1642536366386/work
-python-dateutil @ file:///tmp/build/80754af9/python-dateutil_1626374649649/work
-pytz @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_ddzpsmm2_f/croot/pytz_1671697430473/work
-PyYAML @ file:///Users/runner/miniforge3/conda-bld/pyyaml_1666772684107/work
-requests @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_516b78ce-034d-4395-b9b5-1d78c2847384qtnol99l/croots/recipe/requests_1657734628886/work
-scikit-learn @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_a65wfgtmmc/croot/scikit-learn_1676911655056/work
 scipy==1.9.3
-seaborn @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_73qom8fm82/croot/seaborn_1673479206328/work
-sentry-sdk @ file:///home/conda/feedstock_root/build_artifacts/sentry-sdk_1677505182752/work
-setproctitle @ file:///Users/runner/miniforge3/conda-bld/setproctitle_1666817095633/work
-six @ file:///tmp/build/80754af9/six_1644875935023/work
-smmap @ file:///home/conda/feedstock_root/build_artifacts/smmap_1611376390914/work
-threadpoolctl @ file:///home/conda/feedstock_root/build_artifacts/threadpoolctl_1643647933166/work
+seaborn
 torch==1.13.1
 torchaudio==0.13.1
 torchvision==0.14.1
-tornado @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_1fimz6o0gc/croots/recipe/tornado_1662061695695/work
-tqdm @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_2adqcbsqqd/croots/recipe/tqdm_1664392689227/work
-typing_extensions @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_4b7xacf029/croot/typing_extensions_1669923792404/work
-umap-learn @ file:///Users/runner/miniforge3/conda-bld/umap-learn_1649908197029/work
-urllib3 @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_4cyi6_u2vj/croot/urllib3_1673575523861/work
-wandb @ file:///home/conda/feedstock_root/build_artifacts/wandb_1678246466502/work
+tornado
+tqdm
+typing_extensions
+umap-learn

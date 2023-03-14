@@ -18,8 +18,8 @@ def visualize_latent(val_Ls,ids,l,epoch,temp):
     val_Ls['ID'] = ids
     val_Ls['UMAP1'] = tsne_results['Dim1']
     val_Ls['UMAP2'] = tsne_results['Dim2']
-    features = pd.read_csv("{}/data/output/all_features_grouped_by_id.csv".format(feature_util.mac_path))
-    wgii = pd.read_csv("{}/data/input/hmf_wgii.csv".format(feature_util.mac_path))
+    features = pd.read_csv("{}/data/output/all_features_grouped_by_id.csv".format(feature_util.linux_path))
+    wgii = pd.read_csv("{}/data/input/hmf_wgii.csv".format(feature_util.linux_path))
     val_Ls = pd.merge(val_Ls, wgii, on="ID", copy=False)
     val_Ls = pd.merge(val_Ls, features, on="ID", copy=False)
     #print(np.shape(tsne_results))
@@ -91,5 +91,5 @@ def visualize_latent(val_Ls,ids,l,epoch,temp):
         legend="auto",
         alpha=0.9, ax=ax[2, 2]
     ).set_title("UMAP of L = {}".format(l), fontsize=10)
-    plt.savefig("{}/SignatureDev/Plots/{}/{}/{}.png".format(feature_util.mac_path, l,temp, epoch))
+    plt.savefig("{}/SignatureDev/Plots/{}/{}/{}.png".format(feature_util.linux_path, l,temp, epoch))
     # plt.show()

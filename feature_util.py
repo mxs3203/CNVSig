@@ -12,9 +12,9 @@ import pickle as pk
 mac_path = "/Users/au589901/PycharmProjects/CN_Signatures/"
 linux_path = "/home/mateo/pytorch_docker/CNVSig/"
 
-hg19 = pd.read_csv("{}/data/input/hg19.chrom.sizes.csv".format(mac_path), sep=",")
-chrom_centromere = pd.read_csv("{}/data/input/chrom_centromere_info.csv".format(mac_path), sep=",")
-rep_time = pd.read_csv("{}/data/input/Encode_replication_timing.tsv".format(mac_path), sep="\t")
+hg19 = pd.read_csv("{}/data/input/hg19.chrom.sizes.csv".format(linux_path), sep=",")
+chrom_centromere = pd.read_csv("{}/data/input/chrom_centromere_info.csv".format(linux_path), sep=",")
+rep_time = pd.read_csv("{}/data/input/Encode_replication_timing.tsv".format(linux_path), sep="\t")
 
 largest_loh = -np.inf
 largest_ai = -np.inf
