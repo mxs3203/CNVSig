@@ -53,7 +53,7 @@ class CNVImagesContrastive(Dataset):
         image[:, [next_chr, random_chr]] = image[:, [random_chr, next_chr]]
         return image
 
-    def augmentImageWithProb(self, image, p=0.5):
+    def augmentImageWithProb(self, image, p=0.3):
         for i in range(9): # for all features
             if random.random() >= p:
                 image[i, :, :] = self.applyRandomGaussianNoise(image[i, :, :])

@@ -22,7 +22,7 @@ print(device)
 lr = 1e-2
 batch_size = 128
 wd = 1e-3
-L_to_try = [11,12,13,14]
+L_to_try = [12, 14]
 dataset = CNVImagesContrastive("{}/data/output/make_square_images/".format(feature_util.mac_path))
 dataset_size = len(dataset.annotation)
 
@@ -38,7 +38,7 @@ valLoader = DataLoader(val_set, batch_size=batch_size,num_workers=0, shuffle=Tru
 best_loss = np.inf
 
 for l in L_to_try:
-    for temp in [0.05, 0.1, 0.15, 0.2, 1.0]:
+    for temp in [0.03, 0.02, 0.01]:
         print(l, temp)
         if not os.path.exists("{}/SignatureDev/Plots/{}/".format(feature_util.mac_path, l)):
             os.mkdir("{}/SignatureDev/Plots/{}/".format(feature_util.mac_path, l))
@@ -63,7 +63,7 @@ for l in L_to_try:
         loss_fn = ContrastiveLoss(batch_size, temperature=temp)
         optim = torch.optim.Adam(env_e.parameters(), lr=lr, weight_decay=wd)
         scheduler = ReduceLROnPlateau(optim, 'min', factor=0.5, patience=3)
-        num_epochs = 200
+        num_epochs = 150
         for epoch in tqdm(range(num_epochs)):
             # Train:
             env_e.train()

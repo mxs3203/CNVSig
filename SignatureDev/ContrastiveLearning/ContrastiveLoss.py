@@ -17,11 +17,6 @@ class ContrastiveLoss(nn.Module):
         return cosine_similarity(representations.unsqueeze(1), representations.unsqueeze(0), dim=2)
 
     def forward(self, proj_1, proj_2):
-        """
-        proj_1 and proj_2 are batched embeddings [batch, embedding_dim]
-        where corresponding indices are pairs
-        z_i, z_j in the SimCLR paper
-        """
         batch_size = proj_1.shape[0]
         mask = (~torch.eye(batch_size * 2, batch_size * 2, dtype=bool)).float()
         z_i = normalize(proj_1, p=2, dim=1)
