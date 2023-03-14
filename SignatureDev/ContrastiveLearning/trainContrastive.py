@@ -1,6 +1,8 @@
 import os
 
+import pandas as pd
 import torch
+from torch.nn.functional import cosine_similarity
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 import wandb
@@ -20,7 +22,7 @@ lr = 1e-2
 batch_size = 128
 wd = 1e-3
 L_to_try = [14]
-dataset = CNVImagesContrastive("{}/data/output/make_square_images/".format(feature_util.linux_path))
+dataset = CNVImagesContrastive("{}/data/output/make_square_images/".format(feature_util.mac_path))
 dataset_size = len(dataset.annotation)
 
 train_size = int(len(dataset) * 0.8)
@@ -38,10 +40,10 @@ for l in L_to_try:
         best_loss = np.inf
 
         print(l, temp)
-        if not os.path.exists("{}/SignatureDev/Plots/{}/".format(feature_util.linux_path, l)):
-            os.mkdir("{}/SignatureDev/Plots/{}/".format(feature_util.linux_path, l))
-        if not os.path.exists("{}/SignatureDev/Plots/{}/{}/".format(feature_util.linux_path, l,temp)):
-            os.mkdir("{}/SignatureDev/Plots/{}/{}/".format(feature_util.linux_path, l,temp))
+        if not os.path.exists("{}/SignatureDev/Plots/{}/".format(feature_util.mac_path, l)):
+            os.mkdir("{}/SignatureDev/Plots/{}/".format(feature_util.mac_path, l))
+        if not os.path.exists("{}/SignatureDev/Plots/{}/{}/".format(feature_util.mac_path, l,temp)):
+            os.mkdir("{}/SignatureDev/Plots/{}/{}/".format(feature_util.mac_path, l,temp))
         env_e = CNVExtractorContrastive(encoded_space_dim=l)
         env_e.to(device)
 
@@ -98,5 +100,5 @@ for l in L_to_try:
                 best_loss = np.mean(val_loss)
                 print("current best loss: ", best_loss)
                 print("saving model...")
-                torch.save(env_e.state_dict(), "{}/{}_best_model_contrastive_temp_{}.pth".format(feature_util.linux_path, l,temp))
+                torch.save(env_e.state_dict(), "{}/{}_best_model_contrastive_temp_{}.pth".format(feature_util.mac_path, l,temp))
         wandb.finish()
