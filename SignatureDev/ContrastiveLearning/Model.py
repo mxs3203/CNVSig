@@ -14,13 +14,13 @@ class CNVExtractorContrastive(nn.Module):
         )
         self.flatten = nn.Flatten(start_dim=1)
         self.encoder_lin = nn.Sequential(
-            nn.Linear(128, 256), nn.Sigmoid(),
-            nn.Linear(256, encoded_space_dim),nn.Sigmoid()
+            nn.Linear(128, 128), nn.LeakyReLU(),
+            nn.Linear(128, encoded_space_dim)
         )
         # decoder
         self.decoder_lin = nn.Sequential(
-            nn.Linear(encoded_space_dim, 256), nn.Sigmoid(),
-            nn.Linear(256, 128), nn.Sigmoid()
+            nn.Linear(encoded_space_dim, 128), nn.LeakyReLU(),
+            nn.Linear(128, 128), nn.LeakyReLU()
         )
         self.unflatten = nn.Unflatten(dim=1, unflattened_size=(128, 1, 1))
         self.decoder_conv = nn.Sequential(

@@ -12,12 +12,9 @@ import pickle as pk
 mac_path = "/Users/au589901/PycharmProjects/CN_Signatures/"
 linux_path = "/home/mateo/pytorch_docker/CNVSig/"
 
-hg19 = pd.read_csv("{}/data/input/hg19.chrom.sizes.csv".format(mac_path), sep=",")
-chrom_centromere = pd.read_csv("{}/data/input/chrom_centromere_info.csv".format(mac_path), sep=",")
-rep_time = pd.read_csv("{}/data/input/Encode_replication_timing.tsv".format(mac_path), sep="\t")
-
-largest_loh = -np.inf
-largest_ai = -np.inf
+hg19 = pd.read_csv("{}/data/input/hg19.chrom.sizes.csv".format(linux_path), sep=",")
+chrom_centromere = pd.read_csv("{}/data/input/chrom_centromere_info.csv".format(linux_path), sep=",")
+rep_time = pd.read_csv("{}/data/input/Encode_replication_timing.tsv".format(linux_path), sep="\t")
 
 def readAscatSavePickle(input, output):
     df = pd.read_csv(input, delimiter=",")
@@ -34,6 +31,7 @@ def readAscatSavePickle(input, output):
     df.loc[df["cn"] > 10, "cn"] = 10.0
     print("After filtering: ", np.shape(df))
     df['middleOfSegment'] = (df['End'] + df['Start'])/2
+    df.to_csv("data/output/ascat.csv")
     with open(output, 'wb') as f:
         pk.dump(df, f, pk.HIGHEST_PROTOCOL)
         f.close()
@@ -66,7 +64,9 @@ def makeFilesForEachSampleAndChr(df, IDs, out_folder):
             os.mkdir("{}/{}".format(out_folder, id))
         for c in range(1, 23, 1):  # up to 22
             tmp_df = df.loc[df["ID"] == id]
-            tmp_df = tmp_df.loc[df["Chr"] == c]
+            print("After ID ",tmp_df)
+            tmp_df = tmp_df.loc[tmp_df["Chr"] == c]
+            #print("After chr: ",tmp_df)
             savePickle(tmp_df, "{}/{}/{}.pickle".format(out_folder, id, c))
 
 
